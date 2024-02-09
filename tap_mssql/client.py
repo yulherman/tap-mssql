@@ -7,6 +7,7 @@ from __future__ import annotations
 import gzip
 import json
 import datetime
+import time
 
 from base64 import b64encode
 from decimal import Decimal
@@ -489,6 +490,7 @@ class mssqlStream(SQLStream):
 
         # Get the Stream Properties Dictornary from the Schema
         properties: dict = self.schema.get('properties')
+        should_add_metadata: bool = self.config.get("add_record_metadata")
 
         for key, value in record.items():
             if value is not None:
@@ -500,7 +502,11 @@ class mssqlStream(SQLStream):
                 # Encode base64 binary fields in the record
                 if property_schema.get('contentEncoding') == 'base64':
                     record.update({key: b64encode(value).decode()})
-
+        if should_add_metadata:
+            record["_sdc_extracted_at"] = datetime.datetime.now(tz=datetime.timezone.utc,).isoformat()
+            record["_sdc_batched_at"] = datetime.datetime.now(tz=datetime.timezone.utc,).isoformat()
+            record["_sdc_received_at"] = datetime.datetime.now(tz=datetime.timezone.utc,).isoformat()
+            record["_sdc_sequence"] = int(round(time.time() * 1000))
         return record
 
     def get_records(self, context: dict | None) -> Iterable[dict[str, Any]]:
@@ -522,6 +528,7 @@ class mssqlStream(SQLStream):
             NotImplementedError: If partition is passed in context and the
                 stream does not support partitioning.
         """
+
         if context:
             raise NotImplementedError(
                 f"Stream '{self.name}' does not support partitioning.",

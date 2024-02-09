@@ -24,6 +24,12 @@ class Tapmssql(SQLTap):
             default="mssql"
         ),
         th.Property(
+            "add_record_metadata",
+            th.BooleanType,
+            default=True,
+            description="Whether to add metadata columns.",
+        ),
+        th.Property(
             "driver_type",
             th.StringType,
             description="The Python Driver you will be using to connect to the SQL server",
